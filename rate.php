@@ -4,6 +4,12 @@
  * 此腳本使用cURL查詢台灣銀行的匯率資訊並解析HTML內容，然後以漂亮的前端介面呈現
  */
 
+// 設定 HTTP 頭部防止快取
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // 設定目標URL（台灣銀行匯率查詢頁面）
 $url = 'https://rate.bot.com.tw/xrt?Lang=zh-TW';
 
@@ -86,6 +92,9 @@ if ($rows->length > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>台灣銀行匯率查詢結果</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -130,6 +139,9 @@ if ($rows->length > 0) {
             color: var(--white);
             padding: 20px 30px;
             position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         h1 {
@@ -138,9 +150,50 @@ if ($rows->length > 0) {
             margin-bottom: 10px;
         }
         
+        .header-left {
+            flex: 1;
+        }
+        
         .update-time {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .refresh-btn {
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #FFD54F;
+        }
+        
+        .refresh-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            border-top-color: transparent;
+            margin-right: 4px;
+        }
+        
+        .refresh-btn.loading .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .content {
@@ -301,8 +354,13 @@ if ($rows->length > 0) {
 <body>
     <div class="container">
         <header>
-            <h1>台灣銀行匯率查詢結果</h1>
-            <div class="update-time">最後更新時間：<?php echo $updateTime; ?></div>
+            <div class="header-left">
+                <h1>台灣銀行匯率查詢結果</h1>
+                <div class="update-time">最後更新時間：<?php echo $updateTime; ?></div>
+            </div>
+            <button id="refreshBtn" class="refresh-btn">
+                <span class="refresh-icon"></span>刷新匯率
+            </button>
         </header>
         
         <div class="content">
@@ -401,6 +459,17 @@ if ($rows->length > 0) {
                     spotColumns.forEach(col => col.style.display = '');
                 }
             });
+        });
+        
+        // 刷新按鈕功能
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            // 添加加載動畫
+            this.classList.add('loading');
+            // 禁用按鈕
+            this.disabled = true;
+            
+            // 重新載入頁面，強制從伺服器重新請求頁面而不使用快取
+            location.reload(true);
         });
     </script>
 </body>
